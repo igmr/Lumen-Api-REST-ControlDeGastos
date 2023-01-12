@@ -1,0 +1,11 @@
+/vendor
+/.idea
+Homestead.json
+Homestead.yaml
+.env
+.env.local
+.env.remoto
+.phpunit.result.cache
+._*
+.DS_Store
+/storage/logs
