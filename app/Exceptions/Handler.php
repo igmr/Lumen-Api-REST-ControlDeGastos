@@ -49,6 +49,14 @@ class Handler extends ExceptionHandler
 	 */
 	public function render($request, Throwable $exception)
 	{
+		if($exception instanceof \Illuminate\Database\Eloquent\ModelNotFoundException)
+			return Response()->json(['message' => 'Operation rejected.'],500);
+		if($exception instanceof \Illuminate\Database\QueryException)
+			return Response()->json(['message' => 'Operation rejected.'],500);
+		if ($exception instanceof \Symfony\Component\HttpKernel\Exception\HttpException)
+			return Response()->json(['message' => 'Not found.'],404);
+		if ($exception instanceof \Illuminate\Auth\Access\AuthorizationException)
+			return Response()->json(['message' => 'Not Authorization.'],401);
 		return parent::render($request, $exception);
 	}
 }
