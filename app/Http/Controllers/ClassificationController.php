@@ -10,13 +10,12 @@ class ClassificationController extends Controller
 	//* ***********************************************************************
 	//*	METHODS HTTP
 	//* ***********************************************************************
-	public function index()
+	public function index(Request $request)
 	{
 		//* *******************************************************************
 		//*	Queries
 		//* *******************************************************************
-		$data = $this->findAll();
-		return Response()->json($data);
+		return Response()->json($this->findAll($request));
 	}
 	public function store(Request $request)
 	{
@@ -36,8 +35,7 @@ class ClassificationController extends Controller
 		//* *******************************************************************
 		//* Queries
 		//* *******************************************************************
-		$data = $this->findOne((int) $id);
-		return Response()->json($data);
+		return Response()->json($this->findOne($id));
 	}
 	public function update(Request $request, int $id)
 	{
@@ -73,8 +71,8 @@ class ClassificationController extends Controller
 		if($id <= 2)
 			return Response()
 				->json(['message' => 'Operation rejected (1)'], 400);
-		$subclassification = $this->findSubclassificationsById((int) $id);
-		if(count($subclassification) > 0)
+		$subclassification = $this->countSubclassificationsById((int) $id);
+		if($subclassification > 0)
 			return Response()
 				->json(['message' => 'Operation rejected (2)'], 500);
 		$classification = \App\Models\Classification::find($id);
@@ -89,41 +87,56 @@ class ClassificationController extends Controller
 	//* ***********************************************************************
 	//*	Queries
 	//* ***********************************************************************
-	private function findAll()
+	private function findAll(Request $request)
 	{
 		$classification = new \App\Models\Classification;
+		$pagination = $request->has('pagination') ? (int) $request->pagination : 1;
+		$search = $request->has('search') ? $request->search : '';
+		if($pagination == 1)
+		{
+			$data = $classification::select(['id AS ID', 'name', 'description'])
+				->where('name','like', '%'.$search.'%')
+				->orWhere('description', 'like', '%'.$search.'%')
+				->Paginate(10);
+			if($request->has('search'))
+				$data->appends(['search' => $search]);
+			return $data;
+		}
 		return $classification::select(['id AS ID', 'name', 'description'])
+			->where('name','like', '%'.$search.'%')
+			->orWhere('description', 'like', '%'.$search.'%')
 			->get();
 	}
 	private function findOne(int $id)
 	{
 		$classification = new \App\Models\Classification;
 		return $classification::select(['id AS ID', 'name', 'description'])
-			->firstWhere('id', $id);
+			->Where('id', $id)
+			->firstOrFail();
 	}
-	private function findSubclassificationsById(int $id)
+	private function countSubclassificationsById(int $id)
 	{
 		$subclassification = new \App\Models\Subclassification;
-		return $subclassification::where('classification_id', $id)->get();
+		return $subclassification::where('classification_id', $id)->count();
 	}
 	private function attach(Request $request)
 	{
 		$classification = new \App\Models\Classification;
 		$classification->name = $request->name;
-		$classification->description = $request->description ?: '';
-		$classification->icon = $request->icon ?: '';
+		$classification->description= $request->description ?: null;
+		$classification->icon= $request->icon ?: null;
 		$classification->save();
 		return Response()->json($classification, 201);
 	}
-	private function edit(Request $req, int $id)
+	private function edit(Request $request, int $id)
 	{
 		$classification = \App\Models\Classification::find($id);
-		if(!empty($req->name ?: ''))
-			$classification->name= $req->name;
-		if(!empty($req->description ?: ''))
-			$classification->description= $req->description;
-		if(!empty($req->icon ?: ''))
-			$classification->icon= $req->icon;
+		if($request->has('name'))
+			$classification->name= $request->name;
+		if($request->has('description'))
+			$classification->description= $request->description;
+		if($request->has('icon'))
+			$classification->icon= $request->icon;
 		$classification->save();
 		return Response()->json($classification);
 	}

@@ -10,33 +10,32 @@ class SubclassificationController extends Controller
 	//* ***********************************************************************
 	//* METHODS HTTP
 	//* ***********************************************************************
-	public function index()
+	public function index(Request $request)
 	{
 		//* *******************************************************************
 		//* Queries
 		//* *******************************************************************
-		$data = $this->findAll();
-		return Response()->json($data);
+		return Response()->json($this->findAll($request));
 	}
 	public function store(Request $request)
 	{
-		//* ***********************************************************************
+		//* *******************************************************************
 		//* Validation
-		//* ***********************************************************************
+		//* *******************************************************************
 		$valid = $this->validateStore($request);
 		if($valid->fails())
 			return Response()->json($valid->errors(), 400);
-		$classification_id = $request->classification ?: 1;
-		if($classification_id > 1)
+		$classification_id = $request->classification ?: 2;
+		if($classification_id > 2)
 		{
-			$classification = $this->findClassificationsById($classification_id);
+			$classification = $this->countClassificationsById($classification_id);
 			if(is_null($classification))
 				return Response()
 					->json(['classification'=> 'Is is invalid'], 400);
 		}
-		//* ***********************************************************************
+		//* *******************************************************************
 		//* Queries
-		//* ***********************************************************************
+		//* *******************************************************************
 		return $this->attach($request);
 	}
 	public function show(int $id)
@@ -44,8 +43,7 @@ class SubclassificationController extends Controller
 		//* *******************************************************************
 		//* Queries
 		//* *******************************************************************
-		$data = $this->findOne($id);
-		return Response()->json($data);
+		return Response()->json($this->findOne($id));
 	}
 	public function update(Request $request, int $id)
 	{
@@ -65,8 +63,8 @@ class SubclassificationController extends Controller
 		if(!empty($classification_id) || !is_null($classification_id))
 		{
 			$classification = $this
-				->findClassificationsById($classification_id);
-			if(is_null($classification))
+				->countClassificationsById($classification_id);
+			if($classification == 0)
 				return Response()
 					->json(['classification'=> 'Is is invalid'], 400);
 		}
@@ -83,8 +81,8 @@ class SubclassificationController extends Controller
 		if($id < 2)
 			return Response()
 				->json(['message' => 'Operation rejected (1)'], 400);
-		$operation = $this->findOperationById($id) ?: null;
-		if(is_null($operation))
+		$operation = $this->countOperationById($id);
+		if($operation > 0)
 			return Response()
 				->json(['message' => 'Operation rejected (2)'], 500);
 		$subclassification = \App\Models\Subclassification::find($id) ?: null;
@@ -99,31 +97,48 @@ class SubclassificationController extends Controller
 	//* ***********************************************************************
 	//* QUERIES
 	//* ***********************************************************************
-	private function findAll()
+	private function findAll(Request $request)
 	{
 		$subclassification = new \App\Models\Subclassification;
-		return $subclassification::select([
-			'id AS ID', 'classification_id AS classification','name',
-			'description', 'icon'
-			])->get();
+		$pagination = $request->has('pagination') ? (int) $request->pagination : 1;
+		$search = $request->has('search') ? $request->search : '';
+		if($pagination == 1)
+		{
+			$data = $subclassification::select(['id AS ID',
+				'classification_id AS classification','name',
+				'description', 'icon',])
+				->where('name', 'like', '%' . $search . '%')
+				->orWhere('description', 'like', '%' . $search . '%')
+				->paginate(10);
+			if($request->has('search'))
+				$data->appends(['search' => $search]);
+			return $data;
+		}
+		return $subclassification::select(['id AS ID',
+			'classification_id AS classification','name',
+			'description', 'icon',])
+			->where('name', 'like', '%' . $search . '%')
+			->orWhere('description', 'like', '%' . $search . '%')
+			->get();
 	}
-	private function findOne($id)
+	private function findOne(int $id)
 	{
 		$subclassification = new \App\Models\Subclassification;
-		return $subclassification::select([
-			'id AS ID', 'classification_id AS classification','name',
-			'description', 'icon'
-			])->firstWhere('id', $id);
+		return $subclassification::select(['id AS ID',
+			'classification_id AS classification','name',
+			'description', 'icon',])
+			->where('id', $id)
+			->firstOrFail();
 	}
-	private function findClassificationsById(int $id)
+	private function countClassificationsById(int $id)
 	{
 		$classification = new \App\Models\Classification;
-		return $classification::find($id);
+		return $classification::where('id', $id)->count();
 	}
-	private function findOperationById(int $id)
+	private function countOperationById(int $id)
 	{
 		$operation = new \App\Models\Operation;
-		return $operation::where('subclassification_id', $id)->get();
+		return $operation::where('subclassification_id', $id)->count();
 	}
 	private function attach(Request $request)
 	{
@@ -139,13 +154,13 @@ class SubclassificationController extends Controller
 	{
 		$subclassification = new \App\Models\Subclassification;
 		$subclassification = $subclassification::find($id);
-		if(!empty($request->classification ?: ''))
+		if($request->has('classification'))
 			$subclassification->classification_id = $request->classification;
-		if(!empty($request->name ?: ''))
+		if($request->has('name'))
 			$subclassification->name = $request->name;
-		if(!empty($request->description ?: ''))
+		if($request->has('description'))
 			$subclassification->description = $request->description;
-		if(!empty($request->icon ?: ''))
+		if($request->has('icon'))
 			$subclassification->icon = $request->icon;
 		$subclassification->save();
 		return Response()

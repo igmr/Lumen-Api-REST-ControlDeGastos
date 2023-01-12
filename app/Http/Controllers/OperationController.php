@@ -11,14 +11,12 @@ class OperationController extends Controller
 	//* ***********************************************************************
 	//* HTTP
 	//* ***********************************************************************
-	public function index()
+	public function index(Request $request)
 	{
 		//* ***********************************************************************
 		//* Queries
 		//* ***********************************************************************
-		$data = $this->findAll();
-		return Response()
-			->json($data);
+		return Response()->json($this->findAll($request));
 	}
 
 	public function storeOutcome(Request $request)
@@ -29,14 +27,14 @@ class OperationController extends Controller
 		$valid = $this->validateStore($request);
 		if($valid->fails())
 			return Response()->json($valid->errors(), 400);
-		$subclassification_id = $request->subclassification ?:2;
+		$subclassification_id = $request->subclassification ?: 2;
 		if((int) $subclassification_id < 2)
 			return Response()
 				->json(['message' => 'Operation rejected (1)'], 400);
 		if((int) $subclassification_id > 2)
 		{
 			$subclassification = $this->
-				findOneClassificationItem($subclassification_id)?:null;
+				findOneClassificationItem($subclassification_id) ?: null;
 			if(is_null($subclassification))
 				return Response()
 					->json(['message' => 'Operation rejected (2)'], 400);
@@ -100,9 +98,8 @@ class OperationController extends Controller
 		if($subclassification_id <= 0 || $subclassification_id == 2)
 			return Response()
 				->json(['message' => 'Operation rejected (3)'], 400);
-		$subclassification = $this->
-			findSubclassificationById($subclassification_id)?:null;
-		if(is_null($subclassification))
+		$subclassification = $this->countSubclassificationById($subclassification_id);
+		if($subclassification == 0)
 			return Response()
 				->json(['message' => 'Operation rejected (4)'], 400);
 		if(isset($request->subclassification))
@@ -110,7 +107,7 @@ class OperationController extends Controller
 			$operation = $this->findOne($id);
 			if(is_null($operation))
 				return Response()
-				->json(['message' => 'Operation rejected (5)'], 400);
+					->json(['message' => 'Operation rejected (5)'], 400);
 			if($operation->type === 'ingreso')
 				return Response()
 					->json(['message' => 'Operation rejected (6)'], 400);
@@ -144,12 +141,26 @@ class OperationController extends Controller
 	//* ***********************************************************************
 	//* Queries
 	//* ***********************************************************************
-	private function findAll()
+	private function findAll(Request $request)
 	{
 		$operation = new \App\Models\Operation;
+		$pagination = $request->has('pagination') ? (int) $request->pagination : 1;
+		$search = $request->has('search') ? $request->search : '';
+		if($pagination == 1)
+		{
+			$data = $operation::select(['id AS ID',
+				'subclassification_id AS subclassification',
+				'type', 'amount', 'description'])
+				->where('description', 'like', '%' . $search . '%')
+				->paginate(10);
+			if($request->has('search'))
+				$data->appends(['search' => $search]);
+			return $data;
+		}
 		return $operation::select(['id AS ID',
 				'subclassification_id AS subclassification',
 				'type', 'amount', 'description'])
+			->where('description', 'like', '%' . $search . '%')
 			->get();
 	}
 	private function findOne(int $id)
@@ -158,21 +169,21 @@ class OperationController extends Controller
 		return $operation::select(['id AS ID',
 				'subclassification_id AS subclassification',
 				'type', 'amount', 'description'])
-			->firstWhere('id', $id);
+			->where('id', $id)
+			->firstOrFail();
 	}
 	private function attach(Request $request, bool $income = false)
 	{
 		$operation = new \App\Models\Operation();
 		$operation->subclassification_id = $request->subclassification ?: 2;
-		$operation->type = 'egreso';
-        $operation->amount = abs($request->amount)* -1;
+		$operation->type = $income ? 'ingreso' : 'egreso';
+		$operation->amount = abs($request->amount) * -1;
 		if($income)
 		{
 			$operation->subclassification_id = 1;
-			$operation->type = 'ingreso';
 			$operation->amount = abs($request->amount);
 		}
-		$operation->description = $request->description ?: '';
+		$operation->description = $request->description ?: null;
 		$operation->save();
 		return Response()
 			->json($operation, 201);
@@ -181,18 +192,24 @@ class OperationController extends Controller
 	{
 		$operation = new \App\Models\Operation;
 		$operation = $operation::find($id);
-		if(($request->subclassification?:-1) > 0)
-			$operation->subclassification_id = $request->subclassification;
-		if(!empty($request->description?:''))
+		if($operation->type !== 'ingreso')
+		{
+			if($request->has('subclassification'))
+			{
+				if((int) $request->subclassification > 2)
+					$operation->subclassification_id = $request->subclassification;
+			}
+		}
+		if($request->has('description'))
 			$operation->description = $request->description;
 		$operation->save();
 		return Response()
 			->json($operation);
 	}
-	private function findSubclassificationById(int $id)
+	private function countSubclassificationById(int $id)
 	{
 		$subclassification = new \App\Models\Subclassification;
-		return $subclassification::find($id);
+		return $subclassification::where('id', $id)->count();
 	}
 	private function getBalance()
 	{
