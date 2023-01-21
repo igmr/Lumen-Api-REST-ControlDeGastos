@@ -148,28 +148,31 @@ class OperationController extends Controller
 		$search = $request->has('search') ? $request->search : '';
 		if($pagination == 1)
 		{
-			$data = $operation::select(['id AS ID',
-				'subclassification_id AS subclassification',
-				'type', 'amount', 'description'])
-				->where('description', 'like', '%' . $search . '%')
+			$data = $operation::select(['operations.id AS ID',
+                    'subclassification_id', 'subclassifications.name AS subclassification',
+                    'type', 'amount', 'operations.description'])
+                ->join('subclassifications', 'subclassifications.id', '=', 'subclassification_id')
+				->where('operations.description', 'like', '%' . $search . '%')
 				->paginate(10);
 			if($request->has('search'))
 				$data->appends(['search' => $search]);
-			return $data;
+            return $data;
 		}
-		return $operation::select(['id AS ID',
-				'subclassification_id AS subclassification',
-				'type', 'amount', 'description'])
-			->where('description', 'like', '%' . $search . '%')
+		return $operation::select(['operations.id AS ID',
+                'subclassification_id', 'subclassifications.name AS subclassification',
+				'type', 'amount', 'operations.description'])
+            ->join('subclassifications', 'subclassifications.id', '=', 'subclassification_id')
+			->where('operations.description', 'like', '%' . $search . '%')
 			->get();
 	}
 	private function findOne(int $id)
 	{
 		$operation = new \App\Models\Operation;
-		return $operation::select(['id AS ID',
-				'subclassification_id AS subclassification',
-				'type', 'amount', 'description'])
-			->where('id', $id)
+		return $operation::select(['operations.id AS ID',
+                'subclassification_id', 'subclassifications.name AS subclassification',
+                'type', 'amount', 'operations.description'])
+            ->join('subclassifications', 'subclassifications.id', '=', 'subclassification_id')
+			->where('operations.id', $id)
 			->firstOrFail();
 	}
 	private function attach(Request $request, bool $income = false)
