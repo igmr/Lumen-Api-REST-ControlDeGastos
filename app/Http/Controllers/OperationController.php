@@ -89,7 +89,7 @@ class OperationController extends Controller
 				->json($valid->errors(),400);
 		if($id <= 0)
 			return Response()
-			->json(['message' => 'Operation rejected (1)'], 400);
+			    ->json(['message' => 'Operation rejected (1)'], 400);
 		if(count($request->all()) === 0)
 			return Response()
 				->json(['message' => 'Operation rejected (2)'], 400);
@@ -108,7 +108,7 @@ class OperationController extends Controller
 			if(is_null($operation))
 				return Response()
 					->json(['message' => 'Operation rejected (5)'], 400);
-			if($operation->type === 'ingreso')
+			if($operation->type === 'income')
 				return Response()
 					->json(['message' => 'Operation rejected (6)'], 400);
 		}
@@ -185,7 +185,7 @@ class OperationController extends Controller
 	{
 		$operation = new \App\Models\Operation();
 		$operation->subclassification_id = $request->subclassification ?: 2;
-		$operation->type = $income ? 'ingreso' : 'egreso';
+		$operation->type = $income ? 'income' : 'outcome';
 		$operation->amount = abs($request->amount) * -1;
 		if($income)
 		{
@@ -201,7 +201,7 @@ class OperationController extends Controller
 	{
 		$operation = new \App\Models\Operation;
 		$operation = $operation::find($id);
-		if($operation->type !== 'ingreso')
+		if($operation->type !== 'income')
 		{
 			if($request->has('subclassification'))
 			{
