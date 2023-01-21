@@ -150,7 +150,7 @@ class OperationController extends Controller
 		{
 			$data = $operation::select(['operations.id AS ID',
                     'subclassification_id', 'subclassifications.name AS subclassification',
-                    'type', 'amount', 'operations.description'])
+                    'type', 'amount', 'operations.description', 'operations.created_at'])
                 ->join('subclassifications', 'subclassifications.id', '=', 'subclassification_id')
 				->where('operations.description', 'like', '%' . $search . '%')
 				->paginate(10);
@@ -160,7 +160,7 @@ class OperationController extends Controller
 		}
 		return $operation::select(['operations.id AS ID',
                 'subclassification_id', 'subclassifications.name AS subclassification',
-				'type', 'amount', 'operations.description'])
+				'type', 'amount', 'operations.description', 'operations.created_at'])
             ->join('subclassifications', 'subclassifications.id', '=', 'subclassification_id')
 			->where('operations.description', 'like', '%' . $search . '%')
 			->get();
@@ -170,7 +170,7 @@ class OperationController extends Controller
 		$operation = new \App\Models\Operation;
 		return $operation::select(['operations.id AS ID',
                 'subclassification_id', 'subclassifications.name AS subclassification',
-                'type', 'amount', 'operations.description'])
+                'type', 'amount', 'operations.description', 'operations.created_at'])
             ->join('subclassifications', 'subclassifications.id', '=', 'subclassification_id')
 			->where('operations.id', $id)
 			->firstOrFail();
