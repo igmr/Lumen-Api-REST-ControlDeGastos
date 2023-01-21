@@ -6,7 +6,7 @@ CREATE DATABASE IF NOT EXISTS lumen_api_REST_cost_control;
 USE lumen_api_REST_cost_control;
 
 -- ****************************************************************************
--- * CLASSIFICATIONS                                                          *
+-- * TABLE CLASSIFICATIONS                                                          *
 -- ****************************************************************************
 DROP TABLE IF EXISTS classifications;
 CREATE TABLE IF NOT EXISTS classifications
@@ -23,6 +23,51 @@ CREATE TABLE IF NOT EXISTS classifications
     CONSTRAINT  uk_name_classifications UNIQUE(name)
 ) ENGINE=INNODB CHARSET=utf8mb4;
 
+-- ****************************************************************************
+-- * TABLE SUBCLASSIFICATIONS                                                       *
+-- ****************************************************************************
+DROP TABLE IF EXISTS subclassifications;
+CREATE TABLE IF NOT EXISTS subclassifications
+(
+    id                   INT              NOT    NULL    AUTO_INCREMENT    COMMENT    '',
+    classification_id    INT              NOT    NULL    DEFAULT    2      COMMENT    '',
+    name                 VARCHAR(45)      NOT    NULL                      COMMENT    '',
+    description          VARCHAR(512)            NULL    DEFAULT    NULL   COMMENT    '',
+    icon                 VARCHAR(65)             NULL    DEFAULT    NULL   COMMENT    '',
+    created_at           TIMESTAMP        NOT    NULL    DEFAULT    NOW()  COMMENT    '',
+    updated_at           TIMESTAMP               NULL    DEFAULT    NULL   COMMENT    '',
+    deleted_at           TIMESTAMP               NULL    DEFAULT    NULL   COMMENT    '',
+    CONSTRAINT pk_subclassifications      PRIMARY KEY(id),
+    CONSTRAINT fk_classifications         FOREIGN KEY(classification_id)
+        REFERENCES classifications(id),
+    CONSTRAINT uk_id_subclassifications   UNIQUE(id),
+    CONSTRAINT uk_name_subclassifications UNIQUE(name)
+) ENGINE=INNODB CHARSET=utf8mb4;
+
+-- ****************************************************************************
+-- * TABLE OPERATIONS                                                               *
+-- ****************************************************************************
+DROP TABLE IF EXISTS operations;
+CREATE TABLE IF NOT EXISTS operations
+(
+    id                      INT             NOT    NULL    AUTO_INCREMENT        COMMENT    '',
+    subclassification_id    INT             NOT    NULL    DEFAULT    0          COMMENT    '',
+    type                    ENUM('income'
+                                ,'outcome') NOT    NULL    DEFAULT    'outcome'  COMMENT    '',
+    amount                  FLOAT           NOT    NULL    DEFAULT    0          COMMENT    '',
+    description             VARCHAR(512)           NULL    DEFAULT    NULL       COMMENT    '',
+    created_at              TIMESTAMP       NOT    NULL    DEFAULT    NOW()      COMMENT    '',
+    updated_at              TIMESTAMP              NULL    DEFAULT    NULL       COMMENT    '',
+
+    CONSTRAINT pk_operations                PRIMARY KEY(id),
+    CONSTRAINT fk_subclassifications        FOREIGN KEY(subclassification_id)
+        REFERENCES subclassifications(id),
+    CONSTRAINT uk_id_operations             UNIQUE(id)
+) ENGINE=INNODB CHARSET=utf8mb4;
+
+-- ****************************************************************************
+-- * INSERTS TABLE CLASSIFICATIONS
+-- ****************************************************************************
 INSERT INTO classifications(name, description, icon, created_at)
 VALUES
     ('Ingreso'                   ,    NULL,    NULL,    NOW()),
@@ -41,26 +86,8 @@ VALUES
     ('Deudas'                    ,    NULL,    NULL,    NOW());
 
 -- ****************************************************************************
--- * SUBCLASSIFICATIONS                                                       *
+-- * INSERTS TABLE SUBCLASSIFICATIONS
 -- ****************************************************************************
-DROP TABLE IF EXISTS subclassifications;
-CREATE TABLE IF NOT EXISTS subclassifications
-(
-    id                   INT              NOT    NULL    AUTO_INCREMENT    COMMENT    '',
-    classification_id    INT              NOT    NULL    DEFAULT    1      COMMENT    '',
-    name                 VARCHAR(45)      NOT    NULL                      COMMENT    '',
-    description          VARCHAR(512)            NULL    DEFAULT    NULL   COMMENT    '',
-    icon                 VARCHAR(65)             NULL    DEFAULT    NULL   COMMENT    '',
-    created_at           TIMESTAMP        NOT    NULL    DEFAULT    NOW()  COMMENT    '',
-    updated_at           TIMESTAMP               NULL    DEFAULT    NULL   COMMENT    '',
-    deleted_at           TIMESTAMP               NULL    DEFAULT    NULL   COMMENT    '',
-    CONSTRAINT pk_subclassifications      PRIMARY KEY(id),
-    CONSTRAINT fk_classifications         FOREIGN KEY(classification_id)
-        REFERENCES classifications(id),
-    CONSTRAINT uk_id_subclassifications   UNIQUE(id),
-    CONSTRAINT uk_name_subclassifications UNIQUE(name)
-) ENGINE=INNODB CHARSET=utf8mb4;
-
 INSERT INTO subclassifications(classification_id, name, description, icon, created_at)
 VALUES
     (001,"Ingreso"                        ,    NULL,    NULL,    NOW()),
@@ -157,26 +184,5 @@ VALUES
     (014,"Deuda otro 3"                   ,    NULL,    NULL,    NOW()),
     (014,"Deuda otro 4"                   ,    NULL,    NULL,    NOW()),
     (014,"Deuda otro 5"                   ,    NULL,    NULL,    NOW());
-
--- ****************************************************************************
--- * OPERATIONS                                                               *
--- ****************************************************************************
-DROP TABLE IF EXISTS operations;
-CREATE TABLE IF NOT EXISTS operations
-(
-    id                      INT             NOT    NULL    AUTO_INCREMENT        COMMENT    '',
-    subclassification_id    INT             NOT    NULL    DEFAULT    0          COMMENT    '',
-    type                    ENUM('ingreso'
-                                ,'egreso')  NOT    NULL    DEFAULT    'egreso'   COMMENT    '',
-    amount                  FLOAT           NOT    NULL    DEFAULT    0          COMMENT    '',
-    description             VARCHAR(512)           NULL    DEFAULT    NULL       COMMENT    '',
-    created_at              TIMESTAMP       NOT    NULL    DEFAULT    NOW()      COMMENT    '',
-    updated_at              TIMESTAMP              NULL    DEFAULT    NULL       COMMENT    '',
-
-    CONSTRAINT pk_operations                PRIMARY KEY(id),
-    CONSTRAINT fk_subclassifications        FOREIGN KEY(subclassification_id)
-        REFERENCES subclassifications(id),
-    CONSTRAINT uk_id_operations             UNIQUE(id)
-) ENGINE=INNODB CHARSET=utf8mb4;
 
 -- ****************************************************************************
