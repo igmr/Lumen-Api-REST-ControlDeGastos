@@ -155,6 +155,7 @@ class OperationController extends Controller
                 ->join('subclassifications', 'subclassifications.id', '=', 'subclassification_id')
                 ->join('classifications', 'classifications.id', '=', 'classification_id')
 				->where('operations.description', 'like', '%' . $search . '%')
+				->orderByDesc('operations.id')
 				->paginate(10);
 			if($request->has('search'))
 				$data->appends(['search' => $search]);
@@ -167,6 +168,7 @@ class OperationController extends Controller
             ->join('subclassifications', 'subclassifications.id', '=', 'subclassification_id')
             ->join('classifications', 'classifications.id', '=', 'classification_id')
 			->where('operations.description', 'like', '%' . $search . '%')
+			->orderByDesc('operations.id')
 			->get();
 	}
 	private function findOne(int $id)
