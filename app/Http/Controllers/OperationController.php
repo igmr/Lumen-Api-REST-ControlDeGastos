@@ -34,8 +34,8 @@ class OperationController extends Controller
 		if((int) $subclassification_id > 2)
 		{
 			$subclassification = $this->
-				findOneClassificationItem($subclassification_id) ?: null;
-			if(is_null($subclassification))
+                countSubclassificationById($subclassification_id) ?: null;
+			if($subclassification == 0)
 				return Response()
 					->json(['message' => 'Operation rejected (2)'], 400);
 		}
