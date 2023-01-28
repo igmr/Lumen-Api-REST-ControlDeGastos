@@ -14,4 +14,9 @@ class Operation extends Model
 		'amount',
 		'description',
 	];
+
+	protected $hidden = [
+		'created_at',
+		'updated_at',
+	];
 }

@@ -14,4 +14,10 @@ class Classification extends Model
 		'description',
 		'icon'
 	];
+
+	protected $hidden = [
+		'created_at',
+		'updated_at',
+		'deleted_at',
+	];
 }
