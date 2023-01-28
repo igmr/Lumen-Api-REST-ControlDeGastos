@@ -50,7 +50,7 @@ class SubclassificationController extends Controller
 		//* *******************************************************************
 		//* Validation
 		//* *******************************************************************
-		$valid = $this->validateUpdate($request);
+		$valid = $this->validateUpdate($request, $id);
 		if($valid->fails())
 			return Response()->json($valid->errors(),400);
 		if($id <= 2)
@@ -195,12 +195,12 @@ class SubclassificationController extends Controller
 		];
 		return validator::make($payload, $rules, $messageRules);
 	}
-	private function validateUpdate(Request $request)
+	private function validateUpdate(Request $request, int $id)
 	{
 		$payload = $request->all();
 		$rules = [
 			'classification'	=>	'numeric',
-			'name'				=>	'unique:subclassifications|max:45',
+			'name'				=>	'max:45|unique:subclassifications,name,'.$id,
 			'description'		=>	'max:255',
 			'icon'				=>	'max:65',
 		];
