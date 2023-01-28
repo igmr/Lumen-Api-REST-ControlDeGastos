@@ -121,21 +121,23 @@ class SubclassificationController extends Controller
 			'subclassifications.name',
 			'subclassifications.description', 'subclassifications.icon',
 			'classifications.id AS classification_id', 'classifications.name AS classification'])
-			->join('classifications', 'subclassifications.classification_id', '=', 'classifications.id')
-			->where('subclassifications.id','>',1)
-			->where('subclassifications.name', 'like', '%' . $search . '%')
-			->orWhere('subclassifications.description', 'like', '%' . $search . '%')
-			->get();
+				->join('classifications', 'subclassifications.classification_id', '=', 'classifications.id')
+				->where('subclassifications.id','>',1)
+				->where('subclassifications.name', 'like', '%' . $search . '%')
+				->orWhere('subclassifications.description', 'like', '%' . $search . '%')
+				->get();
 	}
 	private function findOne(int $id)
 	{
 		$subclassification = new \App\Models\Subclassification;
-		return $subclassification::select(['id AS ID',
-			'classification_id AS classification','name',
-			'description', 'icon',])
-			->where('id', $id)
-			->where('id','>',1)
-			->firstOrFail();
+		return $subclassification::select(['subclassifications.id AS ID',
+			'subclassifications.name',
+			'subclassifications.description', 'subclassifications.icon',
+			'classifications.id AS classification_id', 'classifications.name AS classification'])
+				->join('classifications', 'subclassifications.classification_id', '=', 'classifications.id')
+				->where('subclassifications.id','>',1)
+				->where('subclassifications.id', $id)
+				->firstOrFail();
 	}
 	private function countClassificationsById(int $id)
 	{
