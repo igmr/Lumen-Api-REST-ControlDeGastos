@@ -58,7 +58,7 @@ class ClassificationController extends Controller
 			//* ***************************************************************
 			return $this->edit($request, $id);
 		}
-		catch (Exception $e)
+		catch (\Exception $e)
 		{
 			return Response()->json(['message' => $e->getMessage()], 500);
 		}
@@ -170,12 +170,12 @@ class ClassificationController extends Controller
 		];
 		return Validator::make($payload, $rules, $rulesMessage);
 	}
-	private function validateUpdate(Request $request)
+	private function validateUpdate(Request $request, int $id)
 	{
 		$payload = $request->all();
 		$rules = [
 			'classification'	=>	'numeric',
-			'name'				=>	'unique:classifications|max:45',
+			'name'				=>	'max:45|unique:classifications,name,'.$id,
 			'description'		=>	'max:255',
 			'icon'				=>	'max:65',
 		];
