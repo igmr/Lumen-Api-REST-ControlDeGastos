@@ -104,23 +104,27 @@ class SubclassificationController extends Controller
 		$search = $request->has('search') ? $request->search : '';
 		if($pagination == 1)
 		{
-			$data = $subclassification::select(['id AS ID',
-				'classification_id AS classification','name',
-				'description', 'icon',])
-				->where('id','>',1)
-				->where('name', 'like', '%' . $search . '%')
-				->orWhere('description', 'like', '%' . $search . '%')
+			$data = $subclassification::select(['subclassifications.id AS ID',
+				'subclassifications.name',
+				'subclassifications.description', 'subclassifications.icon',
+				'classifications.id AS classification_id', 'classifications.name AS classification'])
+				->join('classifications', 'subclassifications.classification_id', '=', 'classifications.id')
+				->where('subclassifications.id','>',1)
+				->where('subclassifications.name', 'like', '%' . $search . '%')
+				->orWhere('subclassifications.description', 'like', '%' . $search . '%')
 				->paginate(10);
 			if($request->has('search'))
 				$data->appends(['search' => $search]);
 			return $data;
 		}
-		return $subclassification::select(['id AS ID',
-			'classification_id AS classification','name',
-			'description', 'icon',])
-			->where('id','>',1)
-			->where('name', 'like', '%' . $search . '%')
-			->orWhere('description', 'like', '%' . $search . '%')
+		return $subclassification::select(['subclassifications.id AS ID',
+			'subclassifications.name',
+			'subclassifications.description', 'subclassifications.icon',
+			'classifications.id AS classification_id', 'classifications.name AS classification'])
+			->join('classifications', 'subclassifications.classification_id', '=', 'classifications.id')
+			->where('subclassifications.id','>',1)
+			->where('subclassifications.name', 'like', '%' . $search . '%')
+			->orWhere('subclassifications.description', 'like', '%' . $search . '%')
 			->get();
 	}
 	private function findOne(int $id)
