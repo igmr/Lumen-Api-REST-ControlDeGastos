@@ -95,6 +95,7 @@ class ClassificationController extends Controller
 		if($pagination == 1)
 		{
 			$data = $classification::select(['id AS ID', 'name', 'description'])
+				->where('id','>',1)
 				->where('name','like', '%'.$search.'%')
 				->orWhere('description', 'like', '%'.$search.'%')
 				->Paginate(10);
@@ -103,6 +104,7 @@ class ClassificationController extends Controller
 			return $data;
 		}
 		return $classification::select(['id AS ID', 'name', 'description'])
+			->where('id','>',1)
 			->where('name','like', '%'.$search.'%')
 			->orWhere('description', 'like', '%'.$search.'%')
 			->get();
@@ -111,13 +113,16 @@ class ClassificationController extends Controller
 	{
 		$classification = new \App\Models\Classification;
 		return $classification::select(['id AS ID', 'name', 'description'])
+			->where('id','>',1)
 			->Where('id', $id)
 			->firstOrFail();
 	}
 	private function countSubclassificationsById(int $id)
 	{
 		$subclassification = new \App\Models\Subclassification;
-		return $subclassification::where('classification_id', $id)->count();
+		return $subclassification::where('classification_id', $id)
+			->where('id','>',1)
+			->count();
 	}
 	private function attach(Request $request)
 	{
