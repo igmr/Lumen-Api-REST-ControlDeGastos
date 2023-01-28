@@ -107,6 +107,7 @@ class SubclassificationController extends Controller
 			$data = $subclassification::select(['id AS ID',
 				'classification_id AS classification','name',
 				'description', 'icon',])
+				->where('id','>',1)
 				->where('name', 'like', '%' . $search . '%')
 				->orWhere('description', 'like', '%' . $search . '%')
 				->paginate(10);
@@ -117,6 +118,7 @@ class SubclassificationController extends Controller
 		return $subclassification::select(['id AS ID',
 			'classification_id AS classification','name',
 			'description', 'icon',])
+			->where('id','>',1)
 			->where('name', 'like', '%' . $search . '%')
 			->orWhere('description', 'like', '%' . $search . '%')
 			->get();
@@ -128,17 +130,22 @@ class SubclassificationController extends Controller
 			'classification_id AS classification','name',
 			'description', 'icon',])
 			->where('id', $id)
+			->where('id','>',1)
 			->firstOrFail();
 	}
 	private function countClassificationsById(int $id)
 	{
 		$classification = new \App\Models\Classification;
-		return $classification::where('id', $id)->count();
+		return $classification::where('id', $id)
+			->where('id','>',1)
+			->count();
 	}
 	private function countOperationById(int $id)
 	{
 		$operation = new \App\Models\Operation;
-		return $operation::where('subclassification_id', $id)->count();
+		return $operation::where('subclassification_id', $id)
+			->where('id','>',1)
+			->count();
 	}
 	private function attach(Request $request)
 	{
