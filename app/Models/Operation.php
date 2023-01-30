@@ -1,22 +1,28 @@
 <?php
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\eloquent\Model;
+
 
 class Operation extends Model
 {
-	protected $table= 'operations';
-	protected $primaryKey = 'id';
-	protected $fillable = [
-		'id',
-		'subclassifications_id',
-		'type',
-		'amount',
-		'description',
-	];
 
-	protected $hidden = [
-		'created_at',
-		'updated_at',
-	];
+
+    //* definir tabla.
+    protected $table = "operations";
+    //* Definir clave primaria.
+    protected $primaryKey = "id";
+    //* Campos visibles en consulta.
+    protected $fillable = [
+        "subclassification_id",
+        "type",
+        "amount",
+        "description",
+    ];
+    //* Campos no visibles en consulta.
+    protected $hidden = [
+        "created_at",
+        "updated_at",
+    ];
 }
