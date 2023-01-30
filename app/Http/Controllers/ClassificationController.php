@@ -1,194 +1,261 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class ClassificationController extends Controller
 {
-	//* ***********************************************************************
-	//*	METHODS HTTP
-	//* ***********************************************************************
-	public function index(Request $request)
-	{
-		//* *******************************************************************
-		//*	Queries
-		//* *******************************************************************
-		return Response()->json($this->findAll($request));
-	}
-	public function store(Request $request)
-	{
-		//* *******************************************************************
-		//*	Validation
-		//* *******************************************************************
-		$valid = $this->validateStore($request);
-		if($valid->fails())
-			return Response()->json($valid->errors(), 400);
-		//* *******************************************************************
-		//*	Queries
-		//* *******************************************************************
-		return  $this->attach($request);
-	}
-	public function show(int $id)
-	{
-		//* *******************************************************************
-		//* Queries
-		//* *******************************************************************
-		return Response()->json($this->findOne($id));
-	}
-	public function update(Request $request, int $id)
-	{
-		try
-		{
-			//* ***************************************************************
-			//*	Validation
-			//* ***************************************************************
-			$valid = $this->validateUpdate($request, $id);
-			if($valid->fails())
-				return Response()->json($valid->errors(),400);
-			if($id <= 2)
-				return Response()
-					->json(['message' => 'Operation rejected (1)'], 400);
-			if(count($request->all()) === 0)
-				return Response()
-					->json(['message' => 'Operation rejected (2)'], 400);
-			//* ***************************************************************
-			//*	Queries
-			//* ***************************************************************
-			return $this->edit($request, $id);
-		}
-		catch (\Exception $e)
-		{
-			return Response()->json(['message' => $e->getMessage()], 500);
-		}
-	}
-	public function destroy(int $id)
-	{
-		//* *******************************************************************
-		//*	Validation
-		//* *******************************************************************
-		if($id <= 2)
-			return Response()
-				->json(['message' => 'Operation rejected (1)'], 400);
-		$subclassification = $this->countSubclassificationsById((int) $id);
-		if($subclassification > 0)
-			return Response()
-				->json(['message' => 'Operation rejected (2)'], 500);
-		$classification = \App\Models\Classification::find($id);
-		if(is_null($classification))
-			return Response()
-				->json(['message' => 'Operation rejected (3)'], 500);
-		//* *******************************************************************
-		//*	Queries
-		//* *******************************************************************
-		return $this->remove($classification);
-	}
-	//* ***********************************************************************
-	//*	Queries
-	//* ***********************************************************************
-	private function findAll(Request $request)
-	{
-		$classification = new \App\Models\Classification;
-		$pagination = $request->has('pagination') ? (int) $request->pagination : 1;
-		$search = $request->has('search') ? $request->search : '';
-		if($pagination == 1)
-		{
-			$data = $classification::select(['id AS ID', 'name', 'description'])
-				->where('id','>',1)
-				->where('name','like', '%'.$search.'%')
-				->orWhere('description', 'like', '%'.$search.'%')
-				->Paginate(10);
-			if($request->has('search'))
-				$data->appends(['search' => $search]);
-			return $data;
-		}
-		return $classification::select(['id AS ID', 'name', 'description'])
-			->where('id','>',1)
-			->where('name','like', '%'.$search.'%')
-			->orWhere('description', 'like', '%'.$search.'%')
-			->get();
-	}
-	private function findOne(int $id)
-	{
-		$classification = new \App\Models\Classification;
-		return $classification::select(['id AS ID', 'name', 'description'])
-			->where('id','>',1)
-			->Where('id', $id)
-			->firstOrFail();
-	}
-	private function countSubclassificationsById(int $id)
-	{
-		$subclassification = new \App\Models\Subclassification;
-		return $subclassification::where('classification_id', $id)
-			->where('id','>',1)
-			->count();
-	}
-	private function attach(Request $request)
-	{
-		$classification = new \App\Models\Classification;
-		$classification->name = $request->name;
-		$classification->description= $request->description ?: null;
-		$classification->icon= $request->icon ?: null;
-		$classification->save();
-		return Response()->json($classification, 201);
-	}
-	private function edit(Request $request, int $id)
-	{
-		$classification = \App\Models\Classification::find($id);
-		if($request->has('name'))
-			$classification->name= $request->name;
-		if($request->has('description'))
-			$classification->description= $request->description;
-		if($request->has('icon'))
-			$classification->icon= $request->icon;
-		$classification->save();
-		return Response()->json($classification);
-	}
-	private function remove(\App\Models\Classification $classification)
-	{
-		$deleted = $classification->delete();
-		if($deleted)
-			return Response()
-				->json(['message'=> 'Removed successfully']);
-		return Response()
-			->json(['message' => 'Operation fail'], 400);
-
-	}
-	//* ***********************************************************************
-	//*	Validation
-	//* ***********************************************************************
-	private function validateStore(Request $request)
-	{
-		$payload = $request->all();
-		$rules = [
-			'classification'	=>	'numeric',
-			'name'				=>	'required|unique:classifications|max:45',
-			'description'		=>	'max:255',
-			'icon'				=>	'max:65'
-		];
-		$rulesMessage = [
-			'required'	=>	'It is required.',
-			'unique'	=>	'Must be unique.',
-			'max'		=>	'Must be less than :max.',
-			'numeric'	=>	'Must be numeric.',
-		];
-		return Validator::make($payload, $rules, $rulesMessage);
-	}
-	private function validateUpdate(Request $request, int $id)
-	{
-		$payload = $request->all();
-		$rules = [
-			'classification'	=>	'numeric',
-			'name'				=>	'max:45|unique:classifications,name,'.$id,
-			'description'		=>	'max:255',
-			'icon'				=>	'max:65',
-		];
-		$rulesMessage = [
-			'unique'	=>	'Must be unique.',
-			'max'		=>	'Must be less that :max.',
-			'numeric'	=>	'Must be numeric.',
-		];
-		return Validator::make($payload, $rules, $rulesMessage);
-	}
+    //* -----------------------------------------------------------------------
+    //* Methods HTTP
+    //* -----------------------------------------------------------------------
+    public function index(Request $request)
+    {
+        //* *******************************************************************
+        //* Queries
+        //* *******************************************************************
+        //* Regresar lista de classifications
+        $data = $this->findAll($request);
+        //* *******************************************************************
+        //* Response
+        //* *******************************************************************
+        return Response()->json($data);
+    }
+    public function show(int $id)
+    {
+        //* *******************************************************************
+        //* Queries
+        //* *******************************************************************
+        //* Regresar classification
+        $classification = $this->findOne($id);
+        //* *******************************************************************
+        //* Response
+        //* *******************************************************************
+        return Response()->json($classification);
+    }
+    public function store(Request $request)
+    {
+        //* *******************************************************************
+        //* Validations
+        //* *******************************************************************
+        //? Validar datos
+        $valid = $this->validateStore($request);
+        if($valid->fails())
+        {
+            return Response()->json($valid->errors(), 400);
+        }
+        //* *******************************************************************
+        //* Response - create record
+        //* *******************************************************************
+        //* Crear registro
+        return $this->attach($request);
+    }
+    public function update(Request $request, int $id)
+    {
+        //* *******************************************************************
+        //* Validations
+        //* *******************************************************************
+        //? Validar request body
+        $valid = $this->validateUpdate($request, $id);
+        if($valid->fails())
+        {
+            return Response()->json($valid->errors(), 400);
+        }
+        //? Denegar operación para los primeros 2 registros.
+        if($id < 2)
+        {
+            return Response()->json(["message" => "Operation reject (1)"], 400);
+        }
+        //? Validar numero de registros del request body
+        if(count($request->all())=== 0)
+        {
+            return Response()->json(["message" => "Operation reject (2)"], 400);
+        }
+        //* *******************************************************************
+        //* Response - edit record
+        //* *******************************************************************
+        //* editar registro
+        return $this->edit($request, $id);
+    }
+    public function destroy(int $id)
+    {
+        //* *******************************************************************
+        //* Validations
+        //* *******************************************************************
+        //? Denegar operación para eliminar los primeros 2 registros.
+        if($id < 2)
+        {
+            return Response()->json(["message" => "Operation reject (1)"], 400);
+        }
+        //? Validar si existe relación con la tabla subclassification
+        $subclassification = $this->countSubclassificationById($id);
+        if($subclassification > 0)
+        {
+            return Response()->json(["message" => "Operation rejected (2)"], 400);
+        }
+        //? Validar si existe registro
+        $classification = \App\Models\Classification::find($id);
+        if(is_null($classification))
+        {
+            return Response()->json(["message"=> "Operation rejected (3)"], 400);
+        }
+        //* *******************************************************************
+        //* Response - remove record
+        //* *******************************************************************
+        //* eliminar registro
+        return $this->remove($classification);
+    }
+    //* -----------------------------------------------------------------------
+    //* End Methods HTTP
+    //* -----------------------------------------------------------------------
+    //* Queries
+    //* -----------------------------------------------------------------------
+    private function findAll(Request $request)
+    {
+        //? Obtener parámetro de búsqueda
+        $search = $request->has("search")? $request->search : "";
+        //? Obtener parámetro de paginación
+        $pagination = $request->has("pagination") ? $request->pagination : 1;
+        //? Obtener parámetro de numero de registro
+        $records = $request->has("records") ? $request->records : 10;
+        //* Instancia objeto de tipo classification.
+        $classification = new \App\Models\Classification;
+        //* Validar paginación
+        if($pagination == 1)
+        {
+            //* Regresar lista de classification con paginación.
+            return $classification::select(["id", "name", "description"])
+                ->where("id", ">", 1)
+                ->where("name", "like", "%".$search."%")
+                ->orWhere("description", "like", "%". $search ."%")
+                ->paginate($records);
+        }
+        //* Regresar lista de classification.
+        return $classification::select(["id", "name", "description"])
+            ->where("id", ">", 1)
+            ->where("name", "like", "%".$search."%")
+            ->orWhere("description", "like", "%". $search ."%")
+            ->get();
+    }
+    private function findOne(int $id)
+    {
+        //* Crear nuevo objeto de tipo classification.
+        $classification = new \App\Models\Classification;
+        //* Regresar classification.
+        return $classification::select(["id", "name", "description"])
+            ->where("id", ">", 1)
+            ->where("id", $id)
+            ->firstOrFail();
+    }
+    private function attach(Request $request)
+    {
+        //* Instancia objecto de tipo Classification.
+        $classification = new \App\Models\Classification;
+        //* Llenar objeto.
+        $classification->name = $request->name;
+        $classification->description = $request->description ?: null;
+        $classification->icon = $request->icon ?: null;
+        //* Ejecutar query.
+        $classification->save();
+        //* Responser al cliente.
+        return Response()->json($classification, 201);
+    }
+    private function edit(Request $request, int $id)
+    {
+        //* Buscar registro ha actualizar.
+        $classification = \App\Models\Classification::find($id);
+        //? Validar si existe classification
+        if(is_null($classification))
+        {
+            return Response()->json(["message" => "Not found"],400);
+        }
+        //? Validar si existe campo name en request body.
+        if($request->has("name"))
+        {
+            $classification->name = $request->name;
+        }
+        //? Validar si existe campo description en request body.
+        if($request->has("description"))
+        {
+            $classification->description = $request->description;
+        }
+        //? Validar si existe campo icon en request body.
+        if($request->has("icon"))
+        {
+            $classification->icon = $request->icon;
+        }
+        //* Ejecutar query.
+        $classification->save();
+        //* Responder al cliente.
+        return Response()->json($classification);
+    }
+    private function remove(\App\Models\Classification $classification)
+    {
+        //* Ejecutar query.
+        $delete = $classification->delete();
+        //? Validar repuesta.
+        if($delete)
+        {
+            //* Responder al cliente.
+            return Response()->json(["message" => "Removed successfully"]);
+        }
+        //* Responder al cliente.
+        return Response()->json(["message" => "Operation fail"], 400);
+    }
+    private function countSubclassificationById(int $id)
+    {
+        //* Obtener instancia de tabla Subclassification
+        $subclassification = new \App\Models\Subclassification;
+        //* Regresa un número registros encontrados.
+        return $subclassification::where("classification_id", $id)
+            ->where("id", ">", 2)
+            ->count();
+    }
+    //* -----------------------------------------------------------------------
+    //* End Queries
+    //* -----------------------------------------------------------------------
+    //* Validations
+    //* -----------------------------------------------------------------------
+    private function validateStore(Request $request)
+    {
+        //* Obtener datos de request body.
+        $payload = $request->all();
+        //* Definir reglas.
+        $rules = [
+            "name"        => "required|unique:classifications|max:45",
+            "description" => "max:255",
+            "icon"        => "max:65",
+        ];
+        //* Definir mensajes de error personalizados.
+        $rulesMessage = [
+            "required"  => "It is required",
+            "unique"    => "Must be unique",
+            "max"       => "Must be less than :max",
+        ];
+        //* Ejecutar validaciones.
+        return Validator::make($payload, $rules, $rulesMessage);
+    }
+    private function validateUpdate(Request $request, int $id)
+    {
+        //* Obtener datos de request body
+        $payload = $request->all();
+        //* Definir reglas.
+        $rules = [
+            "name"        => "max:45|unique:classification,name".$id,
+            "description" => "max:255",
+            "icon"        => "max:65",
+        ];
+        //* Definir mensajes de error personalizados.
+        $rulesMessage = [
+            "unique"    => "Must be unique",
+            "max"       => "Must be less than :max",
+        ];
+        //* Ejecutar validaciones.
+        return Validator::make($payload, $rules, $rulesMessage);
+    }
+    //* -----------------------------------------------------------------------
+    //* End Validations
+    //* -----------------------------------------------------------------------
 }
